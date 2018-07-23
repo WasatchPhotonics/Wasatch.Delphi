@@ -1,28 +1,18 @@
-////////////////////////////////////////////////////////////////////////////////
-// MIT License
-// 
-// Copyright (c) 2018 Wasatch Photonics and Friedrich Menges (Spectroscopy.Ninja)
-// 
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-// 
-// The above copyright notice and this permission notice shall be included in all
-// copies or substantial portions of the Software.
-// 
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-// SOFTWARE.
-////////////////////////////////////////////////////////////////////////////////
-
 unit SWasatchHW;
+
+// ************************************************************************ //
+//
+//  Delphi Demo application for control of Wasatch Photonics spectrometers,
+//  using the WasatchNET.tlb type library.
+//
+//  Sample code created 07/2018 with Embarcadero Delphi XE 5
+//  by Dr. Friedrich Menges from Spectroscopy Ninja.
+//  http://spectroscopy.ninja
+//
+//  Feel free to re-use code as needed.
+//  Will also run with Delphi Community Edition 10.2.
+//
+// ************************************************************************ //
 
 interface
 
@@ -33,41 +23,37 @@ uses
 type
   coeff  = array of double;
   Pcoeff = ^coeff;
-
 var
   numberOfSpectrometers  : Integer;
 
   // EEPROM
   WP_excitationNM: SmallInt;
+  WP_minIntegrationTimeMS,
+  WP_maxIntegrationTimeMS,
   WP_ExternalTriggerMode: Integer;
-  WP_DetectorTemperatureMin: Double;
+  WP_DetectorTemperatureMin,
   WP_DetectorTemperatureMax: Double;
-  WP_coeff1 : Double;
-  WP_coeff2 : Double;
-  WP_coeff3 : Double;
+  WP_coeff1,
+  WP_coeff2,
+  WP_coeff3,
   WP_coeff4 : Double;
 
   WP_badpixels: Array of SmallInt;
 
   // FPGA Options
-  WP_LaserExists: Boolean;
-  WP_TECSupported: Boolean;
+  WP_LaserExists,
+  WP_TECSupported,
   WP_UseTECCooling: Boolean;
 
   // spectrometer state
-  WP_scanAveraging: Integer;
-  WP_boxcarHalfWidth: Integer;
+  WP_scanAveraging,
+  WP_boxcarHalfWidth,
   WP_laserpower: Integer;
   WP_integrationtime: Integer = 100;
   WPBadpixelInterp : Boolean;
 
   // spectrometer readings
   WP_Temperature: Double;
-
-  // unsupported features
-  WP_CorrDetNonlinearity: Integer;
-  WP_CorrElectricalDark: Integer;
-  WP_AutoToggleStrobeLamp: Integer;
 
   // objects
   WP_wrapper: TDriverVBAWrapper;
@@ -77,10 +63,7 @@ var
   WP_Coefficients: Pcoeff;
   InternalCoeffList: TList;
 
-////////////////////////////////////////////////////////////////////////////////
 // function prototypes
-////////////////////////////////////////////////////////////////////////////////
-
 procedure RefreshWasatchDeviceList;
 procedure UpdateMemo;
 function ConnectWasatch(const DeviceIndex:Integer) :Boolean;
@@ -96,9 +79,7 @@ function GetLaserStateWasatch:Boolean;
 procedure GetScanWasatch(const DeviceIndex:Integer);
 function DisConnectWasatch:Boolean;
 
-////////////////////////////////////////////////////////////////////////////////
 implementation
-////////////////////////////////////////////////////////////////////////////////
 
 uses WasatchDemo;
 
@@ -107,31 +88,27 @@ var
   i:Integer;
   schtring: String;
 begin
-  if not Assigned(WP_wrapper) then
+  if not Assigned(WP_wrapper) then    //initialize wrapper & COM interface
   begin
     WP_wrapper:= TDriverVBAWrapper.Create(MainWin);
     WP_driver:=WP_wrapper.Instance;
-    // WP_Logger := WP_driver.Logger;
-    // WP_Logger.level := LogLevel_DEBUG;
-    // WP_Logger.setPathname('C:\temp\logfile.txt');
+    //WP_Logger:=WP_driver.Logger;
+    //WP_Logger.level:=LogLevel_DEBUG;
+    //WP_Logger.setPathname('C:\temp\logfile.txt');
   end;
-
   WP_driver.closeAllSpectrometers();
   numberOfSpectrometers := WP_driver.openAllSpectrometers();
-
-  if numberOfSpectrometers > 0 then
+  if numberOfSpectrometers>0 then     // look for all Wasatch devices
   begin
     for i:= 0 to numberOfSpectrometers-1 do
     begin
-      WP_spectrometer := WP_driver.getSpectrometer(i);
-      schtring := WP_spectrometer.model;
-      schtring := schtring + '  s/n: ' + WP_spectrometer.serialNumber;
+      WP_spectrometer:= WP_driver.getSpectrometer(i);
+      schtring:=WP_spectrometer.model;
+      schtring:=schtring+ '  s/n: ' + WP_spectrometer.serialNumber;
       MainWin.ComboBox1.Items.Add(schtring);
     end;
   end;
-
-  InternalCoeffList := TList.Create;
-
+  InternalCoeffList:=TList.Create;
   for i:= 0 to numberOfSpectrometers-1 do
   begin
     New(WP_Coefficients);
@@ -257,9 +234,9 @@ var
   WPCoefficients: PSafeArray;
   hresultValue: HResult;
 begin
-  // WP_Logger := WP_driver.Logger;
-  // WP_Logger.level := LogLevel_DEBUG;
-  // WP_Logger.setPathname('C:\temp\logfile.txt');
+  //WP_Logger:=WP_driver.Logger;
+  //WP_Logger.level:=LogLevel_DEBUG;
+  //WP_Logger.setPathname('C:\Data\Delphi\work\spectrometer_hardware\Wasatch\logfile.txt');
   if not Assigned(WP_wrapper) then
   begin
     WP_wrapper:= TDriverVBAWrapper.Create(MainWin);
@@ -267,17 +244,12 @@ begin
     WP_driver.closeAllSpectrometers();
     WP_driver.openAllSpectrometers();
   end;
-
   WP_spectrometer:= WP_driver.getSpectrometer(DeviceIndex);
   Result:=false;
-
   WP_coeff1:=0;
   WP_coeff2:=0;
   WP_coeff3:=0;
   WP_coeff4:=0;
-  WP_CorrDetNonlinearity:=1;
-  WP_CorrElectricalDark:=1;
-  WP_AutoToggleStrobeLamp:=0;
   WP_TECSupported:=false;
   WP_UseTecCooling:=false;
   WP_Temperature:=10;
@@ -286,10 +258,21 @@ begin
   WP_ExternalTriggerMode:=0;
   WP_laserpower:=0;
   WPBadpixelInterp:=true;
-
+  WP_minIntegrationTimeMS:=round(WP_spectrometer.ModelConfig.minIntegrationTimeMS);
+  WP_maxIntegrationTimeMS:=round(WP_spectrometer.ModelConfig.maxIntegrationTimeMS);
+  MainWin.seIntegrationTime.MinValue:=WP_minIntegrationTimeMS;
+  MainWin.seIntegrationTime.MaxValue:=WP_maxIntegrationTimeMS;
   SetParamsWasatch(DeviceIndex);
   WPCoefficients:=WP_spectrometer.ModelConfig.Get_wavecalCoeffs;
-
+  WPCoefficients:=WP_spectrometer.ModelConfig.wavecalCoeffs;
+  i:=0;
+  hresultValue:=SafeArrayGetElement(WPCoefficients,i,WP_coeff1);
+  i:=1;
+  hresultValue:=SafeArrayGetElement(WPCoefficients,i,WP_coeff2);
+  i:=2;
+  hresultValue:=SafeArrayGetElement(WPCoefficients,i,WP_coeff3);
+  i:=3;
+  hresultValue:=SafeArrayGetElement(WPCoefficients,i,WP_coeff4);
   if InternalCoeffList.Count=0 then
   begin
     for i:= 0 to numberOfSpectrometers-1 do
@@ -299,36 +282,27 @@ begin
       InternalCoeffList.add(WP_Coefficients);
     end;
   end;
-
+  CalCoefficients:=InternalCoeffList[DeviceIndex];
+  CalCoefficients^[0]:=WP_coeff1;
+  CalCoefficients^[1]:=WP_coeff2;
+  CalCoefficients^[2]:=WP_coeff3;
+  CalCoefficients^[3]:=WP_coeff4;
   WP_excitationNM:=WP_spectrometer.ModelConfig.excitationNM;
-  if WP_excitationNM = -1 then  // workaround for 2Byte-Offset problem
-    WP_excitationNM:=WP_spectrometer.ModelConfig.slitSizeUM;
-
-  CalCoefficients := InternalCoeffList[DeviceIndex];
-  CalCoefficients^[0] := WP_coeff1;
-  CalCoefficients^[1] := WP_coeff2;
-  CalCoefficients^[2] := WP_coeff3;
-  CalCoefficients^[3] := WP_coeff4;
   WP_LaserExists:=WP_spectrometer.hasLaser;
   if WP_LaserExists then
     MainWin.Chart1.BottomAxis.Title.Caption:='Raman Shift [1/cm]'
   else
     MainWin.Chart1.BottomAxis.Title.Caption:='Wavelength [nm]';
-
   WP_TECSupported:=WP_spectrometer.ModelConfig.hasCooling;
-  WP_TECSupported:=true; // remove later, when hascooling really works
   if WP_TECSupported then
   begin
     WP_UseTecCooling:=true;
     WP_spectrometer.setCCDTemperatureEnable(WP_UseTecCooling);
-    //* :=WP_spectrometer.Modelconfig.detectorTempMin;
-    //*WP_DetectorTemperatureMax:=WP_spectrometer.Modelconfig.detectorTempMax;
-    //* WP_Temperature:=WP_DetectorTemperatureMin;
-    //*WP_spectrometer.setCCDTemperatureSetpointDegC(WP_DetectorTemperatureMin);
-    WP_spectrometer.setCCDTemperatureSetpointDegC(WP_Temperature); //better: set always WP_DetectorTemperatureMin for maximum cooling
+    WP_DetectorTemperatureMin:=WP_spectrometer.Modelconfig.detectorTempMin;
+    WP_DetectorTemperatureMax:=WP_spectrometer.Modelconfig.detectorTempMax;
+    WP_Temperature:=WP_DetectorTemperatureMin;
   end;
-  //*MainWin.aseAcqExpTime.MinValue:=round(WP_spectrometer.ModelConfig.minIntegrationTimeMS); //kommt unfug raus. Mintime:64; Maxtime:1
-  //*MainWin.aseAcqExpTime.MaxValue:=round(WP_spectrometer.ModelConfig.maxIntegrationTimeMS);
+  SetTemperatureWasatch(WP_Temperature);
   Result:=true;
 end;
 
@@ -339,9 +313,6 @@ begin
    WP_spectrometer:= WP_driver.getSpectrometer(DeviceIndex);
    WP_spectrometer.boxcarHalfWidth:=WP_boxcarHalfWidth;
    WP_spectrometer.scanAveraging:=WP_scanAveraging;
-   //WP_wrapper.setCorrectForDetectorNonlinearity_2(DeviceIndex,WP_CorrDetNonlinearity);
-   //WP_wrapper.setCorrectForElectricalDark_2(DeviceIndex,WP_CorrElectricalDark);
-   //WP_wrapper.setExternalTriggerMode_2(DeviceIndex,WP_ExternalTriggerMode);
    WP_spectrometer.integrationTimeMS:=WP_integrationtime;
    if WP_TECSupported and WP_UseTecCooling then
      SetTemperatureWasatch(WP_Temperature);
@@ -422,20 +393,23 @@ end;
 procedure GetScanWasatch( const DeviceIndex:Integer);
 var
   i, j, status,
-  index, position,
-  currentposition:Integer;
+  index,
+  currentposition,
+  NumPixels   :Integer;
   exposuretime: Single;
   done,
   failed:Boolean;
   PReal    :^Real;
-  PI      :PInteger;
+  PI       :PInteger;
+  position,
   SmallIntValue: SmallInt;
-  doubleValue: Double;
+  doubleValue,
+  Average_Value: Double;
   hresultValue: HResult;
   lowerBound,
   upperBound: Integer;
   WPxvalues,
-  WPpixels: PSafeArray;
+  WPpixels,
   WPbadpixels: PSafeArray;
   CalCoefficients:Pcoeff;
 begin
@@ -446,65 +420,59 @@ begin
     if MainWin.ParamsDone then
     begin
       WPpixels := WP_spectrometer.getSpectrum;     // retrieve y values
-  {    if WPBadpixelInterp then
+      SafeArrayGetUBound(WPpixels, 1, NumPixels);   //spectrum's pixel count
+
+      // Note: temporary work-around until bad pixel interpolation is integrated
+      // into Wasatch.NET.
+      if WPBadpixelInterp then
       begin
-        WPbadpixels:=WP_spectrometer.ModelConfig.badPixels;
-        //destroy aktivieren!!
-        // bad pixels interpolieren
-        SafeArrayGetLBound(WPbadpixels, 1, lowerBound);
-        SafeArrayGetUBound(WPbadpixels, 1, upperBound);
-        if Length(WP_badpixels)<upperBound-lowerBound+1 then
-        begin
-          SetLength(WP_badpixels, upperbound-lowerbound+1);
-          for i:= lowerBound to upperBound do
+        WPbadpixels:=WP_spectrometer.ModelConfig.badPixels;  //retrieve bad pixel positions
+        // interpolate bad pixels
+        try
+          SafeArrayGetLBound(WPbadpixels, 1, lowerBound);
+          SafeArrayGetUBound(WPbadpixels, 1, upperBound);
+          for i:=0 to upperBound-lowerBound do
           begin
-            SafeArrayGetElement(WPbadpixels, i, SmallIntValue);
-            WP_badpixels[i]:=SmallIntValue;
-          end;
-        end;
-        for i:=0 to length(WP_badpixels)-1 do
-        begin
-          wert:=0;
-          position:=WP_badpixels[i];
-          if i>0 then
-          begin
-            currentposition:=position-1;
+            Average_Value:=0;
+            SafeArrayGetElement(WPbadpixels, i, position);
+            currentposition:=position;
             SafeArrayGetElement(WPpixels,currentposition,doubleValue);
-            Wert:=doubleValue;
+            if position>0 then
+            begin
+              currentposition:=position-1;
+              SafeArrayGetElement(WPpixels,currentposition,doubleValue);
+              Average_Value:=doubleValue;
+              if position<NumPixels-1 then
+              begin
+                currentposition:=position+1;
+                SafeArrayGetElement(WPpixels,currentposition,doubleValue);
+                Average_Value:=Average_Value+doubleValue;
+              end;
+            end;
+            if (position>0) and (position<NumPixels-1) then
+              Average_Value:=Average_Value/2;
+            currentposition:=position;
+            SafeArrayPutElement(WPpixels,currentposition,Average_Value);
           end;
-          if i<upperbound then
-          begin
-            currentposition:=position+1;
-            SafeArrayGetElement(WPpixels,currentposition,doubleValue);
-            Wert:=Wert+doubleValue;
-          end;
-          if i in [1..upperbound-1] then
-            Wert:=Wert/2;
-          SafeArrayPutElement(WPpixels,position,Wert);
+        finally
+          SafeArrayDestroy(WPbadpixels);
         end;
-      end;    }
-
+      end;
+      // set x axis type
       if WP_LaserExists then                       // retrieve x axis data
-        WPxvalues:=WP_spectrometer.wavenumbers     // for Raman modules
+        WPxvalues:=WP_spectrometer.wavenumbers     // set Raman shift for for Raman modules
       else
-        WPxvalues:=WP_spectrometer.wavelengths;    // UV-VIS modules
-
+        WPxvalues:=WP_spectrometer.wavelengths;    // set wavelength for UV-VIS-NIR  modules
+      // update spectrum plot
       try
-       { CalCoefficients:=InternalCoeffList[DeviceIndex];
-        WP_coeff1:=CalCoefficients^[0];
-        WP_coeff2:=CalCoefficients^[1];
-        WP_coeff3:=CalCoefficients^[2];
-        WP_coeff4:=CalCoefficients^[3]; }
         lowerBound := WPpixels.rgsabound[0].lLbound;
         upperBound := WPpixels.rgsabound[0].cElements + lowerBound - 1;
-
-        if MainWin.Chart1.Series[0].XValues.Count<>upperBound-lowerBound then
+        if MainWin.Chart1.Series[0].XValues.Count<>upperBound-lowerBound then // set plot values on first time
         begin
           MainWin.Chart1.Series[0].Clear;
           for i:=0 to upperBound-lowerBound do
             MainWin.Chart1.Series[0].AddXY(1,1,'');
         end;
-
         for i:=0 to upperBound-lowerBound do
         begin
           hresultValue:=SafeArrayGetElement(WPxvalues,i,doubleValue);
@@ -512,13 +480,10 @@ begin
           hresultValue:=SafeArrayGetElement(WPpixels,i,doubleValue);
           MainWin.Chart1.Series[0].YValues[i]:=doubleValue;
         end;
-
       finally
         SafeArrayDestroy(WPpixels);
         SafeArrayDestroy(WPxvalues);
-        //*SafeArrayDestroy(WPbadpixels);
       end;
-
     end;
   end;
 end;
@@ -544,6 +509,5 @@ begin
   WP_wrapper:=nil;
   Result:=true;
 end;
-
 
 end.

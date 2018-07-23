@@ -1,28 +1,18 @@
-////////////////////////////////////////////////////////////////////////////////
-// MIT License
-// 
-// Copyright (c) 2018 Wasatch Photonics and Friedrich Menges (Spectroscopy.Ninja)
-// 
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
-// in the Software without restriction, including without limitation the rights
-// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-// copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-// 
-// The above copyright notice and this permission notice shall be included in all
-// copies or substantial portions of the Software.
-// 
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-// SOFTWARE.
-////////////////////////////////////////////////////////////////////////////////
-
 unit WasatchDemo;
+
+// ************************************************************************ //
+//
+//  Delphi Demo application for control of Wasatch Photonics spectrometers,
+//  using the WasatchNET.tlb type library.
+//
+//  Sample code created 07/2018 with Embarcadero Delphi XE 5
+//  by Dr. Friedrich Menges from Spectroscopy Ninja.
+//  http://spectroscopy.ninja
+//
+//  Feel free to re-use code as needed.
+//  Will also run with Delphi Community Edition 10.2.
+//
+// ************************************************************************ //
 
 interface
 
@@ -53,6 +43,7 @@ type
     Label4: TLabel;
     Label5: TLabel;
     Memo1: TMemo;
+
     procedure Button1Click(Sender: TObject);
     procedure ComboBox1Select(Sender: TObject);
     procedure seIntegrationTimeChange(Sender: TObject);
@@ -63,14 +54,16 @@ type
     procedure FormClose(Sender: TObject; var Action: TCloseAction);
     procedure seScanAveragingChange(Sender: TObject);
     procedure seBoxCarChange(Sender: TObject);
+
   private
     { Private declarations }
+
   public
     { Public declarations }
     Connected,
     ParamsDone,
-    Acquiring:Boolean;
-    Deviceindex:Integer;
+    Acquiring: Boolean;
+    Deviceindex: Integer;
   end;
 
 var

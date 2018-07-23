@@ -33,6 +33,8 @@ packages from .NET Framework 3.5.
 
 # History
 
+- 2018-07-23 1.0.1
+    - cleanup by Friedrich
 - 2018-07-20 1.0.0
     - Initial version
 
