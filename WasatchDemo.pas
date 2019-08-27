@@ -77,9 +77,9 @@ implementation
 procedure TMainWin.Button1Click(Sender: TObject);
 begin
   RefreshWasatchDeviceList;
-  Combobox1.ItemIndex:=0;
-  Deviceindex:=ComboBox1.ItemIndex;
-  Connected:=ConnectWasatch(Deviceindex);
+  Combobox1.ItemIndex := 0;
+  Deviceindex := ComboBox1.ItemIndex;
+  Connected := ConnectWasatch(Deviceindex);
   UpdateMemo;
 end;
 

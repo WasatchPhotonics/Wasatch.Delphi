@@ -17,7 +17,7 @@ object MainWin: TMainWin
   object Panel1: TPanel
     Left = 0
     Top = 0
-    Width = 225
+    Width = 265
     Height = 574
     Align = alLeft
     BevelOuter = bvNone
@@ -25,12 +25,12 @@ object MainWin: TMainWin
     ParentBackground = False
     TabOrder = 1
     DesignSize = (
-      225
+      265
       574)
     object sbRunAcquisition: TSpeedButton
-      Left = 120
+      Left = 144
       Top = 16
-      Width = 90
+      Width = 115
       Height = 33
       Caption = 'Run'
       OnClick = sbRunAcquisitionClick
@@ -38,7 +38,7 @@ object MainWin: TMainWin
     object Button1: TButton
       Left = 16
       Top = 16
-      Width = 89
+      Width = 122
       Height = 33
       Caption = 'Initialize'
       TabOrder = 0
@@ -47,7 +47,7 @@ object MainWin: TMainWin
     object GroupBox1: TGroupBox
       Left = 16
       Top = 55
-      Width = 194
+      Width = 243
       Height = 210
       Caption = 'Spectrometer'
       TabOrder = 1
@@ -89,7 +89,7 @@ object MainWin: TMainWin
       object ComboBox1: TComboBox
         Left = 16
         Top = 24
-        Width = 161
+        Width = 209
         Height = 21
         Style = csDropDownList
         TabOrder = 0
@@ -163,7 +163,7 @@ object MainWin: TMainWin
     object Memo1: TMemo
       Left = 16
       Top = 271
-      Width = 203
+      Width = 243
       Height = 290
       Anchors = [akLeft, akTop, akBottom]
       Font.Charset = DEFAULT_CHARSET
@@ -179,9 +179,9 @@ object MainWin: TMainWin
     end
   end
   object Chart1: TChart
-    Left = 225
+    Left = 265
     Top = 0
-    Width = 708
+    Width = 668
     Height = 574
     BackWall.Brush.Gradient.Direction = gdBottomTop
     BackWall.Brush.Gradient.EndColor = clWhite
@@ -239,6 +239,8 @@ object MainWin: TMainWin
     Align = alClient
     Color = clWhite
     TabOrder = 0
+    ExplicitLeft = 256
+    ExplicitWidth = 677
     DefaultCanvas = 'TGDIPlusCanvas'
     ColorPaletteIndex = 13
     object Series1: TFastLineSeries

@@ -56,8 +56,9 @@ var
   WP_Temperature: Double;
 
   // objects
-  WP_wrapper: TDriverVBAWrapper;
+  WP_wrapper: IDriverVBAWrapper;
   WP_driver: IDriver;
+
   WP_Logger: ILogger;
   WP_spectrometer: ISpectrometer;
   WP_Coefficients: Pcoeff;
@@ -83,36 +84,50 @@ implementation
 
 uses WasatchDemo;
 
+procedure log(const msg: String);
+begin
+  Mainwin.Memo1.Lines.Add(msg);
+end;
+
 procedure RefreshWasatchDeviceList;
 var
   i:Integer;
   schtring: String;
 begin
-  if not Assigned(WP_wrapper) then    //initialize wrapper & COM interface
+  Mainwin.Memo1.Lines.Clear;
+  log('Initializing');
+  if not Assigned(WP_driver) then    //initialize wrapper & COM interface
   begin
-    WP_wrapper:= TDriverVBAWrapper.Create(MainWin);
-    WP_driver:=WP_wrapper.Instance;
+    WP_wrapper := CoDriverVBAWrapper.Create();
+    WP_driver  := WP_wrapper.instance;
     //WP_Logger:=WP_driver.Logger;
     //WP_Logger.level:=LogLevel_DEBUG;
     //WP_Logger.setPathname('C:\temp\logfile.txt');
   end;
+
   WP_driver.closeAllSpectrometers();
+  log('calling openAllSpectrometers');
   numberOfSpectrometers := WP_driver.openAllSpectrometers();
-  if numberOfSpectrometers>0 then     // look for all Wasatch devices
+  log(format('found %d spectrometers', [numberOfSpectrometers]));
+  if numberOfSpectrometers > 0 then     // look for all Wasatch devices
   begin
-    for i:= 0 to numberOfSpectrometers-1 do
+    for i := 0 to numberOfSpectrometers-1 do
     begin
-      WP_spectrometer:= WP_driver.getSpectrometer(i);
-      schtring:=WP_spectrometer.model;
-      schtring:=schtring+ '  s/n: ' + WP_spectrometer.serialNumber;
+      WP_spectrometer := WP_driver.getSpectrometer(i);
+      schtring := WP_spectrometer.eeprom.model;
+      schtring := schtring + '  s/n: ' + WP_spectrometer.eeprom.serialNumber;
       MainWin.ComboBox1.Items.Add(schtring);
+      log('  found: ' + schtring);
     end;
-  end;
-  InternalCoeffList:=TList.Create;
-  for i:= 0 to numberOfSpectrometers-1 do
+  end
+  else
+    log('no spectrometers found');
+
+  InternalCoeffList := TList.Create;
+  for i := 0 to numberOfSpectrometers-1 do
   begin
     New(WP_Coefficients);
-    SetLength(WP_Coefficients^,4);
+    SetLength(WP_Coefficients^, 4);
     InternalCoeffList.add(WP_Coefficients);
   end;
 end;
@@ -128,101 +143,110 @@ begin
     WP_spectrometer := WP_driver.getSpectrometer(MainWin.DeviceIndex);
 
     Mainwin.Memo1.Lines.Clear;
-    Mainwin.Memo1.Lines.Add('Spectrometer:');
-    Mainwin.Memo1.Lines.Add('  pixels:               ' + IntToStr  (WP_spectrometer.pixels));
-    Mainwin.Memo1.Lines.Add('  model:                ' +            WP_spectrometer.model);
-    Mainwin.Memo1.Lines.Add('  serialNumber:         ' +            WP_spectrometer.serialNumber);
-    Mainwin.Memo1.Lines.Add('  integrationTimeMS:    ' + IntToStr  (WP_spectrometer.integrationTimeMS));
-    Mainwin.Memo1.Lines.Add('  integrationTimeMS:    ' + IntToStr  (WP_spectrometer.integrationTimeMS));
-    Mainwin.Memo1.Lines.Add('  scanAverage:          ' + IntToStr  (WP_spectrometer.scanAveraging));
-    Mainwin.Memo1.Lines.Add('  boxcarHalfWidth:      ' + IntToStr  (WP_spectrometer.boxcarHalfWidth));
-    Mainwin.Memo1.Lines.Add('  isArm:                ' + BoolToStr (WP_spectrometer.isARM, true));
-    Mainwin.Memo1.Lines.Add('  hasLaser:             ' + BoolToStr (WP_spectrometer.hasLaser, true));
-    Mainwin.Memo1.Lines.Add('  getIntegrationTimeMS: ' + IntToStr  (WP_spectrometer.getIntegrationTimeMS));
-    Mainwin.Memo1.Lines.Add('  getFirmwareRev:       ' +            WP_spectrometer.getFirmwareRev);
-    Mainwin.Memo1.Lines.Add('  getFPGARev:           ' +            WP_spectrometer.getFPGARev);
-    Mainwin.Memo1.Lines.Add('  getCCDGain:           ' + FloatToStr(WP_spectrometer.getCCDGain));
-    Mainwin.Memo1.Lines.Add('  getCCDOffset:         ' + IntToStr  (WP_spectrometer.getCCDOffset));
-    Mainwin.Memo1.Lines.Add('  getLineLength:        ' + IntToStr  (WP_spectrometer.getLineLength));
+    log('Spectrometer:');
+    log('  pixels:               ' + IntToStr  (WP_spectrometer.pixels));
+    log('  model:                ' +            WP_spectrometer.model);
+    log('  serialNumber:         ' +            WP_spectrometer.serialNumber);
+    log('  integrationTimeMS:    ' + IntToStr  (WP_spectrometer.integrationTimeMS));
+    log('  scanAverage:          ' + IntToStr  (WP_spectrometer.scanAveraging));
+    log('  boxcarHalfWidth:      ' + IntToStr  (WP_spectrometer.boxcarHalfWidth));
+    log('  isArm:                ' + BoolToStr (WP_spectrometer.isARM, true));
+    log('  hasLaser:             ' + BoolToStr (WP_spectrometer.hasLaser, true));
+    log('  getIntegrationTimeMS: ' + IntToStr  (WP_spectrometer.integrationTimeMS));
+    log('  getFirmwareRev:       ' +            WP_spectrometer.firmwareRevision);
+    log('  getFPGARev:           ' +            WP_spectrometer.fpgaRevision);
+    log('  getCCDGain:           ' + FloatToStr(WP_spectrometer.detectorGain));
+    log('  getCCDOffset:         ' + IntToStr  (WP_spectrometer.detectorOffset));
+    log('  getLineLength:        ' + IntToStr  (WP_spectrometer.pixels));
 
-    Mainwin.Memo1.Lines.Add('FeatureIdentification:');
-    Mainwin.Memo1.Lines.Add('  firmwarePartNum:      ' +            WP_spectrometer.FeatureIdentification.firmwarePartNum);
-    Mainwin.Memo1.Lines.Add('  firmwareDesc:         ' +            WP_spectrometer.FeatureIdentification.firmwareDesc);
-    Mainwin.Memo1.Lines.Add('  isSupported:          ' + BoolToStr (WP_spectrometer.FeatureIdentification.isSupported, true));
-    Mainwin.Memo1.Lines.Add('  defaultPixels:        ' + IntToStr  (WP_spectrometer.FeatureIdentification.defaultPixels));
-    Mainwin.Memo1.Lines.Add('  spectraBlockSize:     ' + IntToStr  (WP_spectrometer.FeatureIdentification.spectraBlockSize));
+    log('FeatureIdentification:');
+    log('  firmwarePartNum:      ' +            WP_spectrometer.FeatureIdentification.firmwarePartNum);
+    log('  firmwareDesc:         ' +            WP_spectrometer.FeatureIdentification.firmwareDesc);
+    log('  isSupported:          ' + BoolToStr (WP_spectrometer.FeatureIdentification.isSupported, true));
+    log('  defaultPixels:        ' + IntToStr  (WP_spectrometer.FeatureIdentification.defaultPixels));
+    log('  spectraBlockSize:     ' + IntToStr  (WP_spectrometer.FeatureIdentification.spectraBlockSize));
 
-    Mainwin.Memo1.Lines.Add('FPGAOptions:');
-    Mainwin.Memo1.Lines.Add('  integrationTimeRes:   ' + IntToStr  (WP_spectrometer.FPGAOptions.integrationTimeResolution));
-    Mainwin.Memo1.Lines.Add('  dataHeader:           ' + IntToStr  (WP_spectrometer.FPGAOptions.dataHeader));
-    Mainwin.Memo1.Lines.Add('  hasCFSelect:          ' + BoolToStr (WP_spectrometer.FPGAOptions.hasCFSelect));
-    Mainwin.Memo1.Lines.Add('  laserType:            ' + IntToStr  (WP_spectrometer.FPGAOptions.laserType));
-    Mainwin.Memo1.Lines.Add('  laserControl:         ' + IntToStr  (WP_spectrometer.FPGAOptions.laserControl));
-    Mainwin.Memo1.Lines.Add('  hasAreaScan:          ' + BoolToStr (WP_spectrometer.FPGAOptions.hasAreaScan));
-    Mainwin.Memo1.Lines.Add('  hasActualIntegTime:   ' + BoolToStr (WP_spectrometer.FPGAOptions.hasActualIntegTime));
-    Mainwin.Memo1.Lines.Add('  hasHorizBinning:      ' + BoolToStr (WP_spectrometer.FPGAOptions.hasHorizBinning));
+    log('FPGAOptions:');
+    log('  integrationTimeRes:   ' + IntToStr  (WP_spectrometer.FPGAOptions.integrationTimeResolution));
+    log('  dataHeader:           ' + IntToStr  (WP_spectrometer.FPGAOptions.dataHeader));
+    log('  hasCFSelect:          ' + BoolToStr (WP_spectrometer.FPGAOptions.hasCFSelect));
+    log('  laserType:            ' + IntToStr  (WP_spectrometer.FPGAOptions.laserType));
+    log('  laserControl:         ' + IntToStr  (WP_spectrometer.FPGAOptions.laserControl));
+    log('  hasAreaScan:          ' + BoolToStr (WP_spectrometer.FPGAOptions.hasAreaScan));
+    log('  hasActualIntegTime:   ' + BoolToStr (WP_spectrometer.FPGAOptions.hasActualIntegTime));
+    log('  hasHorizBinning:      ' + BoolToStr (WP_spectrometer.FPGAOptions.hasHorizBinning));
 
-    Mainwin.Memo1.Lines.Add('ModelConfig:');
-    Mainwin.Memo1.Lines.Add(' EEPROM Page 0:');
-    Mainwin.Memo1.Lines.Add('  model:                ' +            WP_spectrometer.ModelConfig.model);
-    Mainwin.Memo1.Lines.Add('  serialNumber:         ' +            WP_spectrometer.ModelConfig.serialNumber);
-    Mainwin.Memo1.Lines.Add('  baudRate:             ' + IntToStr  (WP_spectrometer.ModelConfig.baudRate));
-    Mainwin.Memo1.Lines.Add('  hasCooling:           ' + BoolToStr (WP_spectrometer.ModelConfig.hasCooling, true));
-    Mainwin.Memo1.Lines.Add('  hasBattery:           ' + BoolToStr (WP_spectrometer.ModelConfig.hasBattery, true));
-    Mainwin.Memo1.Lines.Add('  hasLaser:             ' + BoolToStr (WP_spectrometer.ModelConfig.hasLaser, true));
-    Mainwin.Memo1.Lines.Add('  excitationNM:         ' + IntToStr  (WP_spectrometer.ModelConfig.excitationNM));
-    Mainwin.Memo1.Lines.Add('  slitSizeUM:           ' + IntToStr  (WP_spectrometer.ModelConfig.slitSizeUM));
+    log('EEPROM');
+    log(' Page 0:');
+    log('  model:                ' +            WP_spectrometer.eeprom.model);
+    log('  serialNumber:         ' +            WP_spectrometer.eeprom.serialNumber);
+    log('  baudRate:             ' + IntToStr  (WP_spectrometer.eeprom.baudRate));
+    log('  hasCooling:           ' + BoolToStr (WP_spectrometer.eeprom.hasCooling, true));
+    log('  hasBattery:           ' + BoolToStr (WP_spectrometer.eeprom.hasBattery, true));
+    log('  hasLaser:             ' + BoolToStr (WP_spectrometer.eeprom.hasLaser, true));
+    log('  excitationNM:         ' + FloatToStr(WP_spectrometer.excitationWavelengthNM));
+    log('  slitSizeUM:           ' + IntToStr  (WP_spectrometer.eeprom.slitSizeUM));
 
-    Mainwin.Memo1.Lines.Add(' EEPROM Page 1');
+    log(' Page 1');
 
     for i := 0 to 3 do
     begin
-      SafeArrayGetElement(WP_spectrometer.ModelConfig.wavecalCoeffs, i, f);
-      Mainwin.Memo1.Lines.Add(Format('  wavecalCoeffs[%d]:     %f', [i, f]));
+      SafeArrayGetElement(WP_spectrometer.eeprom.wavecalCoeffs, i, f);
+      log(Format('  wavecalCoeffs[%d]:     %f', [i, f]));
     end;
 
     for i := 0 to 2 do
     begin
-      SafeArrayGetElement(WP_spectrometer.ModelConfig.degCToDACCoeffs, i, f);
-      Mainwin.Memo1.Lines.Add(Format('  degCToDACCoeffs[%d]:   %f', [i, f]));
+      SafeArrayGetElement(WP_spectrometer.eeprom.degCToDACCoeffs, i, f);
+      log(Format('  degCToDACCoeffs[%d]:   %f', [i, f]));
     end;
 
-    Mainwin.Memo1.Lines.Add('  detectorTempMin:      ' + IntToStr  (WP_spectrometer.ModelConfig.detectorTempMin));
-    Mainwin.Memo1.Lines.Add('  detectorTempMax:      ' + IntToStr  (WP_spectrometer.ModelConfig.detectorTempMax));
+    log('  detectorTempMin:      ' + IntToStr  (WP_spectrometer.eeprom.detectorTempMin));
+    log('  detectorTempMax:      ' + IntToStr  (WP_spectrometer.eeprom.detectorTempMax));
 
     for i := 0 to 2 do
     begin
-      SafeArrayGetElement(WP_spectrometer.ModelConfig.adcToDegCCoeffs, i, f);
-      Mainwin.Memo1.Lines.Add(Format('  adcToDegCCoeffs[%d]:   %f', [i, f]));
+      SafeArrayGetElement(WP_spectrometer.eeprom.adcToDegCCoeffs, i, f);
+      log(Format('  adcToDegCCoeffs[%d]:   %f', [i, f]));
     end;
 
-    Mainwin.Memo1.Lines.Add('  thermistorRes298K:    ' + FloatToStr(WP_spectrometer.ModelConfig.thermistorResistanceAt298K));
-    Mainwin.Memo1.Lines.Add('  thermistorBeta:       ' + FloatToStr(WP_spectrometer.ModelConfig.thermistorBeta));
-    Mainwin.Memo1.Lines.Add('  calibrationDate:      ' +            WP_spectrometer.ModelConfig.calibrationDate);
-    Mainwin.Memo1.Lines.Add('  calibrationBy:        ' +            WP_spectrometer.ModelConfig.calibrationBy);
+    log('  thermistorRes298K:    ' + FloatToStr(WP_spectrometer.eeprom.thermistorResistanceAt298K));
+    log('  thermistorBeta:       ' + FloatToStr(WP_spectrometer.eeprom.thermistorBeta));
+    log('  calibrationDate:      ' +            WP_spectrometer.eeprom.calibrationDate);
+    log('  calibrationBy:        ' +            WP_spectrometer.eeprom.calibrationBy);
 
-    Mainwin.Memo1.Lines.Add(' EEPROM Page 2');
-    Mainwin.Memo1.Lines.Add('  detectorName:         ' +            WP_spectrometer.ModelConfig.detectorName);
-    Mainwin.Memo1.Lines.Add('  activePixelsHoriz:    ' + IntToStr  (WP_spectrometer.ModelConfig.activePixelsHoriz));
-    Mainwin.Memo1.Lines.Add('  activePixelsVert:     ' + IntToStr  (WP_spectrometer.ModelConfig.activePixelsVert));
-    Mainwin.Memo1.Lines.Add('  minIntegrationTimeMS: ' + IntToStr  (WP_spectrometer.ModelConfig.minIntegrationTimeMS));
-    Mainwin.Memo1.Lines.Add('  maxIntegrationTimeMS: ' + IntToStr  (WP_spectrometer.ModelConfig.maxIntegrationTimeMS));
-    Mainwin.Memo1.Lines.Add('  actualHoriz:          ' + IntToStr  (WP_spectrometer.ModelConfig.actualHoriz));
-    Mainwin.Memo1.Lines.Add('  roiHorizStart:        ' + IntToStr  (WP_spectrometer.ModelConfig.ROIHorizStart));
-    Mainwin.Memo1.Lines.Add('  roiHorizEnd:          ' + IntToStr  (WP_spectrometer.ModelConfig.ROIHorizEnd));
+    log(' Page 2');
+    log('  detectorName:         ' +            WP_spectrometer.eeprom.detectorName);
+    log('  activePixelsHoriz:    ' + IntToStr  (WP_spectrometer.eeprom.activePixelsHoriz));
+    log('  activePixelsVert:     ' + IntToStr  (WP_spectrometer.eeprom.activePixelsVert));
+    log('  minIntegrationTimeMS: ' + IntToStr  (WP_spectrometer.eeprom.minIntegrationTimeMS));
+    log('  maxIntegrationTimeMS: ' + IntToStr  (WP_spectrometer.eeprom.maxIntegrationTimeMS));
+    log('  actualHoriz:          ' + IntToStr  (WP_spectrometer.eeprom.actualPixelsHoriz));
+    log('  roiHorizStart:        ' + IntToStr  (WP_spectrometer.eeprom.ROIHorizStart));
+    log('  roiHorizEnd:          ' + IntToStr  (WP_spectrometer.eeprom.ROIHorizEnd));
 
-    Mainwin.Memo1.Lines.Add(' EEPROM Page 3');
+    log(' Page 3');
+    for i := 0 to 3 do
+    begin
+      SafeArrayGetElement(WP_spectrometer.eeprom.laserPowerCoeffs, i, f);
+      log(Format('  laserPowerCoeffs[%d]:   %f', [i, f]));
+    end;
+    log('  minLaserPower:        ' + FloatToStr(WP_spectrometer.eeprom.minLaserPowerMW));
+    log('  maxLaserPower:        ' + FloatToStr(WP_spectrometer.eeprom.maxLaserPowerMW));
+    log('  minIntegrationTimeMS  ' + IntToStr  (WP_spectrometer.eeprom.minIntegrationTimeMS));
+    log('  maxIntegrationTimeMS: ' + IntToStr  (WP_spectrometer.eeprom.maxIntegrationTimeMS));
 
-    Mainwin.Memo1.Lines.Add(' EEPROM Page 4');
-    Mainwin.Memo1.Lines.Add('  userText:             ' +            WP_spectrometer.ModelConfig.userText);
+    log(' Page 4');
+    log('  userText:             ' +            WP_spectrometer.eeprom.userText);
 
-    Mainwin.Memo1.Lines.Add(' EEPROM Page 5');
-
+    log(' Page 5');
     for i := 0 to 14 do
     begin
-      SafeArrayGetElement(WP_spectrometer.ModelConfig.badPixels, i, n);
-      Mainwin.Memo1.Lines.Add(Format('  badPixels[%02d]:        %d', [i, n]));
+      SafeArrayGetElement(WP_spectrometer.eeprom.badPixels, i, n);
+      log(Format('  badPixels[%02d]:        %d', [i, n]));
     end;
+    log('  productConfiguration: ' +            WP_spectrometer.eeprom.productConfiguration);
+
   end;
 end;
 
@@ -237,10 +261,10 @@ begin
   //WP_Logger:=WP_driver.Logger;
   //WP_Logger.level:=LogLevel_DEBUG;
   //WP_Logger.setPathname('C:\Data\Delphi\work\spectrometer_hardware\Wasatch\logfile.txt');
-  if not Assigned(WP_wrapper) then
+  if not Assigned(WP_driver) then
   begin
-    WP_wrapper:= TDriverVBAWrapper.Create(MainWin);
-    WP_driver:=WP_wrapper.Instance;
+    WP_wrapper := CoDriverVBAWrapper.Create();
+    WP_driver := WP_wrapper.instance;
     WP_driver.closeAllSpectrometers();
     WP_driver.openAllSpectrometers();
   end;
@@ -258,13 +282,12 @@ begin
   WP_ExternalTriggerMode:=0;
   WP_laserpower:=0;
   WPBadpixelInterp:=true;
-  WP_minIntegrationTimeMS:=round(WP_spectrometer.ModelConfig.minIntegrationTimeMS);
-  WP_maxIntegrationTimeMS:=round(WP_spectrometer.ModelConfig.maxIntegrationTimeMS);
+  WP_minIntegrationTimeMS:=round(WP_spectrometer.eeprom.minIntegrationTimeMS);
+  WP_maxIntegrationTimeMS:=round(WP_spectrometer.eeprom.maxIntegrationTimeMS);
   MainWin.seIntegrationTime.MinValue:=WP_minIntegrationTimeMS;
   MainWin.seIntegrationTime.MaxValue:=WP_maxIntegrationTimeMS;
   SetParamsWasatch(DeviceIndex);
-  WPCoefficients:=WP_spectrometer.ModelConfig.Get_wavecalCoeffs;
-  WPCoefficients:=WP_spectrometer.ModelConfig.wavecalCoeffs;
+  WPCoefficients:=WP_spectrometer.eeprom.wavecalCoeffs;
   i:=0;
   hresultValue:=SafeArrayGetElement(WPCoefficients,i,WP_coeff1);
   i:=1;
@@ -287,19 +310,19 @@ begin
   CalCoefficients^[1]:=WP_coeff2;
   CalCoefficients^[2]:=WP_coeff3;
   CalCoefficients^[3]:=WP_coeff4;
-  WP_excitationNM:=WP_spectrometer.ModelConfig.excitationNM;
+  WP_excitationNM:=WP_spectrometer.eeprom.excitationNM;
   WP_LaserExists:=WP_spectrometer.hasLaser;
   if WP_LaserExists then
     MainWin.Chart1.BottomAxis.Title.Caption:='Raman Shift [1/cm]'
   else
     MainWin.Chart1.BottomAxis.Title.Caption:='Wavelength [nm]';
-  WP_TECSupported:=WP_spectrometer.ModelConfig.hasCooling;
+  WP_TECSupported:=WP_spectrometer.eeprom.hasCooling;
   if WP_TECSupported then
   begin
     WP_UseTecCooling:=true;
-    WP_spectrometer.setCCDTemperatureEnable(WP_UseTecCooling);
-    WP_DetectorTemperatureMin:=WP_spectrometer.Modelconfig.detectorTempMin;
-    WP_DetectorTemperatureMax:=WP_spectrometer.Modelconfig.detectorTempMax;
+    WP_spectrometer.detectorTECEnabled := WP_UseTecCooling;
+    WP_DetectorTemperatureMin:=WP_spectrometer.eeprom.detectorTempMin;
+    WP_DetectorTemperatureMax:=WP_spectrometer.eeprom.detectorTempMax;
     WP_Temperature:=WP_DetectorTemperatureMin;
   end;
   SetTemperatureWasatch(WP_Temperature);
@@ -337,7 +360,7 @@ begin
   if (WP_TECSupported) and WP_UseTecCooling then
   if (temperature>=WP_DetectorTemperatureMin) and (temperature <=WP_DetectorTemperatureMax) then
   begin
-    WP_spectrometer.setCCDTemperatureSetpointDegC(temperature);
+    WP_spectrometer.detectorTECSetpointDegC := temperature;
     WP_Temperature:=temperature;
     Result:=false;
   end
@@ -377,7 +400,7 @@ procedure RunLaserWasatch(const value:Boolean);
 begin
   if WP_LaserExists then
   begin
-    WP_spectrometer.setLaserEnable(value);
+    WP_spectrometer.laserEnabled := value;
   end;
 end;
 
@@ -386,7 +409,7 @@ begin
   Result:=false;
   if WP_LaserExists then
   begin
-   Result:=WP_spectrometer.getLaserEnabled;
+   Result := WP_spectrometer.laserEnabled;
   end;
 end;
 
@@ -426,7 +449,7 @@ begin
       // into Wasatch.NET.
       if WPBadpixelInterp then
       begin
-        WPbadpixels:=WP_spectrometer.ModelConfig.badPixels;  //retrieve bad pixel positions
+        WPbadpixels:=WP_spectrometer.eeprom.badPixels;  //retrieve bad pixel positions
         // interpolate bad pixels
         try
           SafeArrayGetLBound(WPbadpixels, 1, lowerBound);
@@ -505,8 +528,8 @@ begin
     InternalCoeffList.Clear;
   end;
   WP_driver.closeAllSpectrometers;
-  WP_wrapper.Destroy;
-  WP_wrapper:=nil;
+  WP_driver := nil;
+  WP_wrapper := nil;
   Result:=true;
 end;
 
