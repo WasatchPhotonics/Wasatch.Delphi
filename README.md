@@ -15,9 +15,9 @@ spectroscopy platform.
 
 # Dependencies
 
-The demo has been tested with Wasatch.NET 1.0.27 (32-bit) and 
+The demo has been tested with Wasatch.NET 2.0.27 (32-bit) and 
 [Delphi Community Edition](https://www.embarcadero.com/products/delphi/starter)
-(10.2 Tokyo) on a Windows 10 (64-bit) host.
+(10.3.2) on a Windows 10 (64-bit) host.
 
 # Contents
 
