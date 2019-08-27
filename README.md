@@ -3,9 +3,9 @@
 # Overview
 
 A simple demo showing how to call 
-[Wasatch.NET](https://github.com/WasatchPhotonics/Wasatch.NET) from 
+[Wasatch.NET](https://github.com/WasatchPhotonics/Wasatch.NET) via
 [Embarcadero Delphi](https://www.embarcadero.com/products/delphi) 
-to control Wasatch Photonics spectrometers from object Pascal.
+to control Wasatch Photonics spectrometers through object Pascal.
 
 This demo was generously contributed by 
 [Dr. Friedrich Menges](mailto:friedrich.menges@effemm2.de),
